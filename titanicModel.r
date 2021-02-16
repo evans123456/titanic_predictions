@@ -1,3 +1,8 @@
+# clears all objects in "global environment"
+rm(list=ls())
+
+# clears the console area
+cat("\014")
 setwd("~/proj/ml/titanic_R/titanic")
 
 #by default read.csv will read the data file, build a dataframe and convert
@@ -39,8 +44,20 @@ titanic.full[titanic.full$Embarked == "","Embarked"] <- "S"
 table(is.na(titanic.full$Age))
 
 #we will therefore replace the missing age values with the Age median
-age.median <- median(titanic.full$Age,na.rm = TRUE)
-titanic.full[is.na(titanic.full$Age),"Age"] <- age.median
+#age.median <- median(titanic.full$Age,na.rm = TRUE)
+#titanic.full[is.na(titanic.full$Age),"Age"] <- age.median
+
+#instead of using the median(which is bad) we can use regression, 1st we have to remove outliers
+upper.whisker <- boxplot.stats(titanic.full$Age)$stats[5]
+outlier.filter <- titanic.full[titanic.full$Age<upper.whisker,]
+
+age.equation = "Age ~ Fare + Pclass + Sex + SibSp + Fare + Embarked"
+
+age.model <- lm(formula = age.equation, data = outlier.filter, )
+
+age.predictions <- predict(age.model,newdata = titanic.full[is.na(titanic.full$Age),c("Fare", "Pclass", "Sex","SibSp","Fare" , "Embarked")])
+titanic.full[is.na(titanic.full$Age),"Age"] <- age.predictions
+
 
 #categorical casting(takes on a limited, and usually fixed, number of possible values )
 titanic.full$Pclass <- as.factor(titanic.full$Pclass)
